@@ -6,8 +6,7 @@ import System.IO
 import Eval
 
 explodeList :: [a] -> [[a]]
-explodeList [] = []
-explodeList (x:xs) = [x] : explodeList xs
+explodeList = map (:[])
 
 combineListsXList :: [[a]] -> [a] -> [[a]]
 combineListsXList [] [] = []
@@ -16,27 +15,26 @@ combineListsXList (x:xs) (y:ys) = (x++[y]) : combineListsXList xs ys
 
 combineMultipleLists :: [[a]] ->[[a]] -> [[a]]
 combineMultipleLists [] acc = acc
-combineMultipleLists (x:[]) acc = combineListsXList acc x
+combineMultipleLists [x] acc = combineListsXList acc x
 combineMultipleLists (x:xs) acc = combineMultipleLists xs (combineListsXList acc x)
 
 splitWhitespaceAndConvert :: [String] -> [[Int]]
-splitWhitespaceAndConvert [] = []
-splitWhitespaceAndConvert (x:xs) = (convertToInt (words x)) : splitWhitespaceAndConvert xs
+splitWhitespaceAndConvert = map (convertToInt . words)
 
 convertToInt :: [String] -> [Int]
-convertToInt [] = []
-convertToInt (x:xs) = (read x :: Int) : convertToInt xs
+convertToInt = map (\ x -> read x :: Int)
 
 main :: IO ()
 main = catch main' noParse
 
+main' :: IO ()
 main' = do (fileName: _) <- getArgs
-           sourceText <- readFile (fileName)
+           sourceText <- readFile fileName
            inputTextWhole <- getContents
            let inputTextLines = combineMultipleLists (splitWhitespaceAndConvert (lines inputTextWhole)) []
            let tokens = alexScanTokens sourceText
            let parsedProg = parseCalc (alexScanTokens sourceText)
-           compiledProg <- evaluateProgram (parsedProg) inputTextLines
+           compiledProg <- evaluateProgram parsedProg inputTextLines
            return ()
         
 
