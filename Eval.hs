@@ -1,7 +1,7 @@
 module Eval where
 
 import Grammar
-import Data.List(intercalate)
+import Data.List(intercalate,uncons)
 
 type Environment = [(String, Type, Expr)]
 
@@ -28,7 +28,27 @@ prettyPrint e = show e
 getFirstInput :: [[Int]] -> Int
 getFirstInput [] = error "There is no input left."
 getFirstInput xs = head (head xs)
-  
+
+byteAt :: Int -> [[a]] -> [[a]] -> (a,[[a]])
+byteAt _ []  _ = error "Index out of bounds!"
+byteAt y (x:xs) acc
+        | y <= 0 = case uncons x of
+                Just (h,t) -> (h, acc ++ [t] ++ xs)
+                Nothing -> error "There is no input left on this stream."
+        | otherwise = byteAt (y-1) xs (acc ++ [x])
+
+streamAt :: Int -> [[a]] -> [[a]] -> ([a],[[a]])
+streamAt _ []  _ = error "Index out of bounds!"
+streamAt y (x:xs) acc
+        | y <= 0 = (x, acc ++ xs)
+        | otherwise = streamAt (y-1) xs (acc ++ [x])
+
+toInt :: Expr -> Int
+toInt (ExprInt a) = a
+toInt (ExprBool True) = 1
+toInt (ExprBool False) = 0
+toInt _ = 0
+
 getLineInput :: [[Int]] -> [Int]
 getLineInput [] = []
 getLineInput xs = head xs
@@ -230,8 +250,14 @@ evaluateExpr (ExprExpr x1) input env = evaluateExpr x1 input env
 evaluateExpr (ExprArrayValue i e) input env = (getListValueBinding i (fst evaluatedExpr) env, snd evaluatedExpr)
                                             where evaluatedExpr = evaluateExpr e input env
 evaluateExpr (ExprIdent i) input env = (getValueBinding i env, input)
-evaluateExpr ExprRead input _ = (ExprInt (getFirstInput input), getInputAfterRead input)
-evaluateExpr ExprReadLine input _ = (ExprArrayAssign (convertIntListToExpr (getLineInput input)), tail input)
+
+evaluateExpr (ExprRead e) input env = 
+        let (at,after) = byteAt (toInt $ fst $ evaluateExpr e input env) input [] in (ExprInt at, after)
+evaluateExpr (ExprReadLine e) input env =
+        let (at,after) = streamAt (toInt $ fst $ evaluateExpr e input env) input [] in (ExprArrayAssign (convertIntListToExpr at), after)
+
+evaluateExpr ExprReadNext input _ = (ExprInt (getFirstInput input), getInputAfterRead input)
+evaluateExpr ExprReadNextLine input _ = (ExprArrayAssign (convertIntListToExpr (getLineInput input)), tail input)
 
 evaluateExpr (ExprLength e) input env | isArray (fst evaluatedExpr) = (ExprInt (getArrayLength (fst evaluatedExpr)), snd evaluatedExpr)
                                       | otherwise = error "Couldn't apply the method length on a variable. (List expected as parameter)"
