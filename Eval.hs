@@ -31,10 +31,11 @@ nextByte xs = case filter (not . null) xs of
                 (x:xss) -> let Just (h,t) = uncons x in (h, takeWhile null xs ++ t : xss)
                 [] -> error "There is no input left."
 
-getInputAfterRead :: [[Int]] -> [[Int]]
-getInputAfterRead xs | null f = tail xs
-                     | otherwise = f : tail xs
-                     where f = tail (head xs)
+nextStream :: [[a]] -> ([a],[[a]])
+nextStream [] = error "No input."
+nextStream xs = case filter (not . null) xs of
+                (x:xss) -> (x, takeWhile null xs ++ []:xss)
+                [] -> error "There is no input left."
 
 byteAt :: Int -> [[a]] -> [[a]] -> (a,[[a]])
 byteAt _ []  _ = error "Index out of bounds!"
@@ -47,7 +48,7 @@ byteAt y (x:xs) acc
 streamAt :: Int -> [[a]] -> [[a]] -> ([a],[[a]])
 streamAt _ []  _ = error "Index out of bounds!"
 streamAt y (x:xs) acc
-        | y <= 0 = (x, acc ++ xs)
+        | y <= 0 = (x, acc ++ []:xs)
         | otherwise = streamAt (y-1) xs (acc ++ [x])
 
 toInt :: Expr -> Int
@@ -55,10 +56,6 @@ toInt (ExprInt a) = a
 toInt (ExprBool True) = 1
 toInt (ExprBool False) = 0
 toInt _ = 0
-
-getLineInput :: [[Int]] -> [Int]
-getLineInput [] = []
-getLineInput xs = head xs
 
 addEnv :: Environment -> [Environment] -> [Environment]
 addEnv e env = e : env
@@ -256,7 +253,7 @@ evaluateExpr (ExprReadLine e) input env =
         let (at,after) = streamAt (toInt $ fst $ evaluateExpr e input env) input [] in (ExprArrayAssign (map ExprInt at), after)
 
 evaluateExpr ExprReadNext input _ = let (at,after) = nextByte input in (ExprInt at, after)
-evaluateExpr ExprReadNextLine input _ = (ExprArrayAssign (map ExprInt (getLineInput input)), tail input)
+evaluateExpr ExprReadNextLine input _ = let (at,after) = nextStream input in (ExprArrayAssign (map ExprInt at), after)
 
 evaluateExpr (ExprLength e) input env | isArray (fst evaluatedExpr) = (ExprInt (getArrayLength (fst evaluatedExpr)), snd evaluatedExpr)
                                       | otherwise = error "Couldn't apply the method length on a variable. (List expected as parameter)"
