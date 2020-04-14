@@ -25,9 +25,16 @@ prettyPrint (ExprString x) = read $ "\"" ++ x ++ "\""
 prettyPrint (ExprArrayAssign xs) = "[" ++ intercalate "," (map prettyPrint xs) ++ "]"
 prettyPrint e = show e 
 
-getFirstInput :: [[Int]] -> Int
-getFirstInput [] = error "There is no input left."
-getFirstInput xs = head (head xs)
+nextByte :: [[a]] -> (a,[[a]])
+nextByte [] = error "No input."
+nextByte xs = case filter (not . null) xs of
+                (x:xss) -> let Just (h,t) = uncons x in (h, takeWhile null xs ++ t : xss)
+                [] -> error "There is no input left."
+
+getInputAfterRead :: [[Int]] -> [[Int]]
+getInputAfterRead xs | null f = tail xs
+                     | otherwise = f : tail xs
+                     where f = tail (head xs)
 
 byteAt :: Int -> [[a]] -> [[a]] -> (a,[[a]])
 byteAt _ []  _ = error "Index out of bounds!"
@@ -52,14 +59,6 @@ toInt _ = 0
 getLineInput :: [[Int]] -> [Int]
 getLineInput [] = []
 getLineInput xs = head xs
-
-getInputAfterRead :: [[Int]] -> [[Int]]
-getInputAfterRead xs | null f = tail xs
-                     | otherwise = f : tail xs
-                     where f = tail (head xs)
-  
-convertIntListToExpr :: [Int] -> [Expr]
-convertIntListToExpr = map ExprInt
 
 addEnv :: Environment -> [Environment] -> [Environment]
 addEnv e env = e : env
@@ -254,10 +253,10 @@ evaluateExpr (ExprIdent i) input env = (getValueBinding i env, input)
 evaluateExpr (ExprRead e) input env = 
         let (at,after) = byteAt (toInt $ fst $ evaluateExpr e input env) input [] in (ExprInt at, after)
 evaluateExpr (ExprReadLine e) input env =
-        let (at,after) = streamAt (toInt $ fst $ evaluateExpr e input env) input [] in (ExprArrayAssign (convertIntListToExpr at), after)
+        let (at,after) = streamAt (toInt $ fst $ evaluateExpr e input env) input [] in (ExprArrayAssign (map ExprInt at), after)
 
-evaluateExpr ExprReadNext input _ = (ExprInt (getFirstInput input), getInputAfterRead input)
-evaluateExpr ExprReadNextLine input _ = (ExprArrayAssign (convertIntListToExpr (getLineInput input)), tail input)
+evaluateExpr ExprReadNext input _ = let (at,after) = nextByte input in (ExprInt at, after)
+evaluateExpr ExprReadNextLine input _ = (ExprArrayAssign (map ExprInt (getLineInput input)), tail input)
 
 evaluateExpr (ExprLength e) input env | isArray (fst evaluatedExpr) = (ExprInt (getArrayLength (fst evaluatedExpr)), snd evaluatedExpr)
                                       | otherwise = error "Couldn't apply the method length on a variable. (List expected as parameter)"
