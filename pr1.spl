@@ -1,0 +1,9 @@
+int[] a = readln();
+int[] b = readln();
+int i = 0;    
+while(i < length(a)){
+    println(a[i]);
+    println(a[i+1]);
+    println(b[i/2]);
+    i = i + 2;
+}
