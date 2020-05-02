@@ -12,6 +12,7 @@ typeOfList (x:xs) Nothing = typeOfList xs (Just (typeOf x))
 typeOfList (x:xs) (Just t) | t == typeOf x = typeOfList xs (Just t)
                            | otherwise = error "You cannot have multiple type in an array!"
 typeOf :: Expr -> Type
+typeOf ExprNothing = TypeEmpty
 typeOf (ExprInt _) = TypeInt
 typeOf (ExprBool _) = TypeBool
 typeOf (ExprString _) = TypeString
@@ -19,37 +20,57 @@ typeOf (ExprArrayAssign xs) = typeOfList xs Nothing
 typeOf _ = error "Cannot get type"
 
 prettyPrint :: Expr -> String
+prettyPrint ExprNothing = "null"
 prettyPrint (ExprInt x) = show x
 prettyPrint (ExprBool x) = show x
 prettyPrint (ExprString x) = read $ "\"" ++ x ++ "\""
 prettyPrint (ExprArrayAssign xs) = "[" ++ intercalate "," (map prettyPrint xs) ++ "]"
 prettyPrint e = show e 
 
-nextByte :: [[a]] -> (a,[[a]])
-nextByte [] = error "No input."
-nextByte xs = case filter (not . null) xs of
-                (x:xss) -> let Just (h,t) = uncons x in (h, takeWhile null xs ++ t : xss)
-                [] -> error "There is no input left."
+getNextByte [] acc = (ExprNothing, [])
+getNextByte (x:xs) acc
+        | null x = getNextByte xs (acc ++ [x])
+        | otherwise = case uncons x of
+                Just (h,t) -> (ExprInt h, acc ++ [t] ++ xs)
+                Nothing -> (ExprNothing, acc ++ x : xs)
 
+getByteAt :: Int -> [[Int]] -> [[Int]] -> (Expr,[[Int]])
+getByteAt _ []  acc = (ExprNothing, acc)
+getByteAt y (x:xs) acc
+        | y <= 0 = case uncons x of
+                Just (h,t) -> (ExprInt h, acc ++ [t] ++ xs)
+                Nothing -> (ExprNothing, acc ++ x : xs)
+        | otherwise = getByteAt (y-1) xs (acc ++ [x])
+
+readNextByte [] acc = (ExprNothing, [])
+readNextByte (x:xs) acc
+        | null x = readNextByte xs (acc ++ [x])
+        | otherwise = case uncons x of
+                Just (h,t) -> (ExprInt h, acc ++ x : xs)
+                Nothing -> (ExprNothing, acc ++ x : xs)
+
+readByteAt :: Int -> [[Int]] -> [[Int]] -> (Expr,[[Int]])
+readByteAt _ []  acc =  (ExprNothing, acc)
+readByteAt y (x:xs) acc
+        | y <= 0 = case uncons x of
+                Just (h,t) -> (ExprInt h, acc ++ x : xs)
+                Nothing -> (ExprNothing, acc ++ x : xs)
+        | otherwise = readByteAt (y-1) xs (acc ++ [x])
+
+getStreamAt :: Int -> [[a]] -> [[a]] -> ([a],[[a]])
+getStreamAt _ []  _ = error "Index out of bounds!"
+getStreamAt y (x:xs) acc
+        | y <= 0 = (x, acc ++ []:xs)
+        | otherwise = getStreamAt (y-1) xs (acc ++ [x])
+
+
+{-
 nextStream :: [[a]] -> ([a],[[a]])
 nextStream [] = error "No input."
 nextStream xs = case filter (not . null) xs of
                 (x:xss) -> (x, takeWhile null xs ++ []:xss)
                 [] -> error "There is no input left."
-
-byteAt :: Int -> [[a]] -> [[a]] -> (a,[[a]])
-byteAt _ []  _ = error "Index out of bounds!"
-byteAt y (x:xs) acc
-        | y <= 0 = case uncons x of
-                Just (h,t) -> (h, acc ++ [t] ++ xs)
-                Nothing -> error "There is no input left on this stream."
-        | otherwise = byteAt (y-1) xs (acc ++ [x])
-
-streamAt :: Int -> [[a]] -> [[a]] -> ([a],[[a]])
-streamAt _ []  _ = error "Index out of bounds!"
-streamAt y (x:xs) acc
-        | y <= 0 = (x, acc ++ []:xs)
-        | otherwise = streamAt (y-1) xs (acc ++ [x])
+-}
 
 toInt :: Expr -> Int
 toInt (ExprInt a) = a
@@ -182,6 +203,10 @@ evaluateExprOp (ExprArrayAssign x1) Plus (ExprArrayAssign x2) = ExprArrayAssign 
 evaluateExprOp _ _ _ = error "EvaluateExprOp: Invalid type (Expected type INT or STRING/LIST { only concatenation works: '+'})"
 
 evaluateExprComp :: Expr -> CompareOp -> Expr -> Expr
+evaluateExprComp ExprNothing Equals ExprNothing = ExprBool True
+evaluateExprComp (ExprArrayAssign x1) Equals ExprNothing = ExprBool (null x1)
+evaluateExprComp ExprNothing Equals (ExprArrayAssign x1) = ExprBool (null x1)
+
 evaluateExprComp (ExprInt x1) GreaterThan (ExprInt x2) = ExprBool (x1 > x2)
 evaluateExprComp (ExprInt x1) LessThan (ExprInt x2) = ExprBool (x1 < x2)
 evaluateExprComp (ExprInt x1) GreaterOrEqualThan (ExprInt x2) = ExprBool (x1 >= x2)
@@ -197,6 +222,9 @@ evaluateExprComp (ExprString x1) LessThan (ExprString x2) = ExprBool (length x1 
 evaluateExprComp (ExprString x1) GreaterOrEqualThan (ExprString x2) = ExprBool (length x1 >= length x2)
 evaluateExprComp (ExprString x1) LessOrEqualThan (ExprString x2) = ExprBool (length x1 <= length x2)
 evaluateExprComp (ExprString x1) Equals (ExprString x2) = ExprBool (x1 == x2)
+
+evaluateExprComp _ _ ExprNothing = ExprBool False
+evaluateExprComp ExprNothing _ _ = ExprBool False
 
 evaluateExprComp a _ b | typeOf a /= typeOf b = error "Unsupported operation between mismatched types."
 evaluateExprComp _ _ _ = error "Unsupported operation." --undefined
@@ -247,17 +275,25 @@ evaluateExpr (ExprArrayValue i e) input env = (getListValueBinding i (fst evalua
                                             where evaluatedExpr = evaluateExpr e input env
 evaluateExpr (ExprIdent i) input env = (getValueBinding i env, input)
 
-evaluateExpr (ExprRead e) input env = 
-        let (at,after) = byteAt (toInt $ fst $ evaluateExpr e input env) input [] in (ExprInt at, after)
-evaluateExpr (ExprReadLine e) input env =
-        let (at,after) = streamAt (toInt $ fst $ evaluateExpr e input env) input [] in (ExprArrayAssign (map ExprInt at), after)
+evaluateExpr (ExprGet ExprNothing) input _ = let (at,after) = getNextByte input [] in (at, after)
+evaluateExpr (ExprGet e) input env = 
+        let (at,after) = getByteAt (toInt $ fst $ evaluateExpr e input env) input [] in (at, after)
 
-evaluateExpr ExprReadNext input _ = let (at,after) = nextByte input in (ExprInt at, after)
-evaluateExpr ExprReadNextLine input _ = let (at,after) = nextStream input in (ExprArrayAssign (map ExprInt at), after)
+evaluateExpr (ExprRead ExprNothing) input _ = let (at,after) = readNextByte input [] in (at, after)
+evaluateExpr (ExprRead e) input env = 
+        let (at,after) = readByteAt (toInt $ fst $ evaluateExpr e input env) input [] in (at, after)
+
+evaluateExpr (ExprStream e) input env =
+        let (at,after) = getStreamAt (toInt $ fst $ evaluateExpr e input env) input []
+        in (ExprArrayAssign (map ExprInt at), after)
+
+-- evaluateExpr ExprReadNextLine input _ = let (at,after) = nextStream input in (ExprArrayAssign (map ExprInt at), after)
 
 evaluateExpr (ExprLength e) input env | isArray (fst evaluatedExpr) = (ExprInt (getArrayLength (fst evaluatedExpr)), snd evaluatedExpr)
                                       | otherwise = error "Couldn't apply the method length on a variable. (List expected as parameter)"
                                       where evaluatedExpr = evaluateExpr e input env
+
+evaluateExpr ExprNothing input env = (ExprNothing, input)
 
 evaluateExpr x input _
       | isValue x = (x, input)

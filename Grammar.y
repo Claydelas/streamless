@@ -45,12 +45,14 @@ import Tokens
   "print"     { TokenPrint _}
   "println"   { TokenPrintLine _}
   "read"      { TokenRead _}
-  "readln"    { TokenReadLine _}
+  "get"       { TokenGet _}
+  "stream"    { TokenStream _}
   "length"    { TokenLength _}
+  "null"      { TokenNull _}  
 
 %nonassoc "if" "while"
 %nonassoc "else"
-%nonassoc "print" "println" "int" "bool" "string"
+%nonassoc "print" "println" "int" "bool" "string" "null"
 %right "="
 %left "&&" "||"
 %right ">" "<" ">=" "<=" "==" "!="
@@ -111,11 +113,13 @@ Expr : "not" Expr             { ExprNot $2 }
      | "true"                 { ExprBool True }
      | "false"                { ExprBool False }
      | stringLit              { ExprString $1 }
-     | "read" "(" ")"         { ExprReadNext }
+     | "read" "(" ")"         { ExprRead ExprNothing }
      | "read" "(" Expr ")"    { ExprRead $3 }
-     | "readln" "(" ")"       { ExprReadNextLine }
-     | "readln" "(" Expr ")"  { ExprReadLine $3 }
+     | "get" "(" ")"          { ExprGet ExprNothing }
+     | "get" "(" Expr ")"     { ExprGet $3 }
+     | "stream" "(" Expr ")"  { ExprStream $3 }
      | "length" "(" Expr ")"  { ExprLength $3 }
+     | "null"                 { ExprNothing }
 
 Type : "bool"          { TypeBool }
      | "int"           { TypeInt }
@@ -170,9 +174,8 @@ data Expr
     | ExprArrayAssign ExprList 
     | ExprArrayValue Ident Expr
     | ExprRead Expr
-    | ExprReadNext
-    | ExprReadLine Expr
-    | ExprReadNextLine
+    | ExprGet Expr
+    | ExprStream Expr
     | ExprLength Expr
     | ExprEmpty
     | ExprError

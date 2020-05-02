@@ -46,9 +46,11 @@ tokens :-
   "while"     {tok(\p s -> TokenWhile p)}
   "print"     {tok(\p s -> TokenPrint p)}
   "println"   {tok(\p s -> TokenPrintLine p)}
+  "get"       {tok(\p s -> TokenGet p)}
   "read"      {tok(\p s -> TokenRead p)}
-  "readln"    {tok(\p s -> TokenReadLine p)}
+  "stream"    {tok(\p s -> TokenStream p)}
   "length"    {tok(\p s -> TokenLength p)}
+  "null"      {tok(\p s -> TokenNull p)}
   $alpha [$alpha $digit \_ \’]*   { tok(\p s -> TokenIdent p s) }
   @string     {tok(\p s -> TokenStringLit p (init (tail s))) } 
   $digit+     {tok(\p s -> TokenIntLit p (read s)) } 
@@ -85,9 +87,11 @@ data Token =
   TokenWhile      AlexPosn  |
   TokenPrint      AlexPosn  |
   TokenPrintLine  AlexPosn  |
+  TokenGet        AlexPosn  |
   TokenRead       AlexPosn  |
-  TokenReadLine   AlexPosn  |
-  TokenLength     AlexPosn  
+  TokenStream     AlexPosn  |
+  TokenLength     AlexPosn  |
+  TokenNull       AlexPosn
   deriving (Eq,Show) 
 
 
@@ -116,8 +120,9 @@ token_posn (TokenFalse (AlexPn a l c))=show(l) ++ ":" ++ show(c)
 token_posn (TokenWhile (AlexPn a l c))=show(l) ++ ":" ++ show(c)
 token_posn (TokenPrint (AlexPn a l c))=show(l) ++ ":" ++ show(c)
 token_posn (TokenPrintLine (AlexPn a l c))=show(l) ++ ":" ++ show(c)
+token_posn (TokenGet (AlexPn a l c))=show(l) ++ ":" ++ show(c)
 token_posn (TokenRead (AlexPn a l c))=show(l) ++ ":" ++ show(c)
-token_posn (TokenReadLine (AlexPn a l c))=show(l) ++ ":" ++ show(c)
+token_posn (TokenStream (AlexPn a l c))=show(l) ++ ":" ++ show(c)
 token_posn (TokenLength (AlexPn a l c))=show(l) ++ ":" ++ show(c)
-  
+token_posn (TokenNull (AlexPn a l c))=show(l) ++ ":" ++ show(c)
 }
