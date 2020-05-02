@@ -1,0 +1,13 @@
+int[] a = readln();
+int[] b = readln();
+int[] c = readln();
+int i = 0;
+while(i < length(a))
+{
+    println(c[i]);
+    println(b[i]);
+    println(a[i]);
+    println(a[i] + b[i]);
+    println(b[i] + c[i]);
+    i=i+1;
+}

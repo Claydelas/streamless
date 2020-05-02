@@ -1,0 +1,9 @@
+int[] a = readln();
+int i = 0;
+while(i<length(a))
+{
+    println(a[i+2]);
+    println(2 * a[i+1]);
+    println(3 * a[i] - 1);
+    i=i+3;
+}
