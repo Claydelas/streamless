@@ -1,9 +1,15 @@
-int[] a = readln();
-int i = 0;
+// int[] a = stream(0);
+// int i = 0;
+// int c = 0;
+// while(i<length(a))
+// {
+//     println(a[i] + c);
+//     c = c + a[i];
+//     i = i + 1;
+// }
+
 int c = 0;
-while(i<length(a))
-{
-    println(a[i] + c);
-    c = c + a[i];
-    i = i + 1;
+while(read(0) != null){
+    println(read(0) + c);
+    c = c + get(0);
 }
