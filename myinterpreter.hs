@@ -8,15 +8,15 @@ import Eval
 explodeList :: [a] -> [[a]]
 explodeList = map (:[])
 
-combineListsXList :: [[a]] -> [a] -> [[a]]
-combineListsXList [] [] = []
-combineListsXList [] xs = explodeList xs
-combineListsXList (x:xs) (y:ys) = (x++[y]) : combineListsXList xs ys
+combListsXList :: [[a]] -> [a] -> [[a]]
+combListsXList [] [] = []
+combListsXList [] xs = explodeList xs
+combListsXList (x:xs) (y:ys) = (x++[y]) : combListsXList xs ys
 
-combineMultipleLists :: [[a]] ->[[a]] -> [[a]]
-combineMultipleLists [] acc = acc
-combineMultipleLists [x] acc = combineListsXList acc x
-combineMultipleLists (x:xs) acc = combineMultipleLists xs (combineListsXList acc x)
+combMultipleLists :: [[a]] ->[[a]] -> [[a]]
+combMultipleLists [] acc = acc
+combMultipleLists [x] acc = combListsXList acc x
+combMultipleLists (x:xs) acc = combMultipleLists xs (combListsXList acc x)
 
 splitWhitespaceAndConvert :: [String] -> [[Int]]
 splitWhitespaceAndConvert = map (convertToInt . words)
@@ -31,10 +31,10 @@ main' :: IO ()
 main' = do (fileName: _) <- getArgs
            sourceText <- readFile fileName
            inputTextWhole <- getContents
-           let inputTextLines = combineMultipleLists (splitWhitespaceAndConvert (lines inputTextWhole)) []
+           let inputTextLines = combMultipleLists (splitWhitespaceAndConvert (lines inputTextWhole)) []
            let tokens = alexScanTokens sourceText
            let parsedProg = parseCalc tokens
-           compiledProg <- evaluateProgram parsedProg inputTextLines
+           compiledProg <- evalProgram parsedProg inputTextLines
            return ()
         
 
