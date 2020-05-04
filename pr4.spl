@@ -1,9 +1,65 @@
-int[] a = readln();
-int i = 0;
-while(i<length(a))
-{
-    println(a[i+2]);
-    println(2 * a[i+1]);
-    println(3 * a[i] - 1);
-    i=i+3;
+// int[] a = stream(0);
+// int i = 0;
+// while(i+2<length(a))
+// {
+//     println(a[i+2]);
+//     println(2 * a[i+1]);
+//     println(3 * a[i] - 1);
+//     i=i+3;
+// }
+
+int a_0 = 0;
+int a_1 = 0;
+int a_2 = 0;
+bool w_loop = true;
+while(w_loop){
+    int i = 0;
+    while(i < 3){
+        if(read(0) != null){
+            if(i == 0){
+                a_0 = get(0);
+            }
+            if(i == 1){
+                a_1 = get(0);
+            }
+            if(i == 2){
+                a_2 = get(0);
+            }
+        }else{
+            w_loop = false;
+        }
+        i = i + 1;
+    }
+    if(w_loop){
+        println(a_2);
+        println(2 * a_1);
+        println(3 * a_0 - 1);
+    }
 }
+
+// int a_0 = 0;
+// int a_1 = 0;
+// int a_2 = 0;
+// bool w_loop = true;
+// while(w_loop){
+//     if(read(0) != null){
+//         a_0 = get(0);
+//         if(read(0) != null){
+//             a_1 = get(0);
+//             if(read(0) != null){
+//                 a_2 = get(0);
+//             }else{
+//                 w_loop = false;
+//             }
+//         }else{
+//             w_loop = false;
+//         }
+//     }else{
+//         w_loop = false;
+//     }
+//     if(w_loop){
+//         println(a_2);
+//         println(2 * a_1);
+//         println(3 * a_0 - 1);
+//     }
+// }
