@@ -46,6 +46,7 @@ import Tokens
   "println"   { TokenPrintLine _}
   "read"      { TokenRead _}
   "get"       { TokenGet _}
+  "consume"  { TokenConsume _}
   "stream"    { TokenStream _}
   "length"    { TokenLength _}
   "null"      { TokenNull _}  
@@ -77,6 +78,7 @@ Statement : "if" "(" Expr ")" "{" StatementList "}" "else" "{" StatementList "}"
           | ident "[" Expr "]" "=" Expr ";"             { StatementArrayAssign $1 $3 $6}
           | VarDeclr                                     { StatementVarDeclr $1}
           | ArrayDeclr                                   { StatementArrayDeclr $1}
+		  | "consume" "(" Expr ")"  ";"				{ StatementConsume $3}
 
 VarDeclr : Type ident ";"           { VarDeclrOnly $1 $2 }
          | Type ident "=" Expr ";"  { VarDeclrAssign $1 $2 $4 }
@@ -155,6 +157,7 @@ data Statement
     | StatementArrayAssign Ident Expr Expr
     | StatementVarDeclr VarDeclr
     | StatementArrayDeclr ArrayDeclr
+	| StatementConsume Expr
     | StatementError
     deriving (Show, Eq)
 

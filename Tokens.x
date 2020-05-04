@@ -47,6 +47,7 @@ tokens :-
   "print"     {tok(\p s -> TokenPrint p)}
   "println"   {tok(\p s -> TokenPrintLine p)}
   "get"       {tok(\p s -> TokenGet p)}
+  "consume" {tok(\p s -> TokenConsume p)}
   "read"      {tok(\p s -> TokenRead p)}
   "stream"    {tok(\p s -> TokenStream p)}
   "length"    {tok(\p s -> TokenLength p)}
@@ -88,6 +89,7 @@ data Token =
   TokenPrint      AlexPosn  |
   TokenPrintLine  AlexPosn  |
   TokenGet        AlexPosn  |
+  TokenConsume   AlexPosn  |
   TokenRead       AlexPosn  |
   TokenStream     AlexPosn  |
   TokenLength     AlexPosn  |
@@ -121,6 +123,7 @@ token_posn (TokenWhile (AlexPn a l c))=show(l) ++ ":" ++ show(c)
 token_posn (TokenPrint (AlexPn a l c))=show(l) ++ ":" ++ show(c)
 token_posn (TokenPrintLine (AlexPn a l c))=show(l) ++ ":" ++ show(c)
 token_posn (TokenGet (AlexPn a l c))=show(l) ++ ":" ++ show(c)
+token_posn (TokenConsume (AlexPn a l c))=show(l) ++ ":" ++ show(c)
 token_posn (TokenRead (AlexPn a l c))=show(l) ++ ":" ++ show(c)
 token_posn (TokenStream (AlexPn a l c))=show(l) ++ ":" ++ show(c)
 token_posn (TokenLength (AlexPn a l c))=show(l) ++ ":" ++ show(c)

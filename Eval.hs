@@ -406,4 +406,6 @@ evalStatement (StatementWhile e s) input env
 
 evalStatement (StatementPrint e) input env = evalStatementPrint (StatementPrint e) input env
 evalStatement (StatementPrintLine e) input env = evalStatementPrint (StatementPrintLine e) input env
+evalStatement (StatementConsume e) input env = let (at,after) = getByteAt (toInt $ fst $ evalExpr e input env) input [] in return (env, after)
+
 evalStatement _ _ _ = error "Not a statement!"
