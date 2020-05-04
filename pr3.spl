@@ -11,12 +11,12 @@
 
 println(0);
 if(read(1) != null){
-    int temp = get(1);
+    consume(1);
 }
 while(read(1) != null && read(0) != null){
     println(get(1));
     println(get(0));
     if(read(1) != null){
-        int temp = get(1);
+        consume(1);
     }
 }
