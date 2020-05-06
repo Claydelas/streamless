@@ -1,0 +1,30 @@
+bool turn = true;
+bool w_loop = true;
+int c = 0;
+while(w_loop){
+    if(turn){
+        if(read(0) != null){
+            println(get(0));
+        }else{
+            w_loop = false;
+        }
+        if(c == 1){
+            turn = false;
+            c = 0;
+        }else{
+            c = c + 1; 
+        }
+    }else{
+        if(read(1) != null){
+            println(get(1));
+        }else{
+            w_loop = false;
+        }
+        if(c == 2){
+            turn = true;
+            c = 0;
+        }else{
+            c = c + 1;
+        }
+    }
+}
